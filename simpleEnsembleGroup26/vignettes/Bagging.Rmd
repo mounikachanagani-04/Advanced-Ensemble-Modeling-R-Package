@@ -1,0 +1,77 @@
+---
+title: "Bagging technique"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Bagging technique}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r}
+library(simpleEnsembleGroup26)
+```
+
+# Instructions for Bagging technique
+
+When performing bagging technique using the `unifiedModelingToolkit` function, it's important to follow these guidelines for the function to work correctly:
+
+-   **Model Selection**: Pass a list containing only one model name to the `models` parameter. You can choose from the following models: `list("Lasso_regression", "lasso", "ridge", "elastic_net", "random_forest")`.
+-   **Problem Type Detection**: The function automatically detects the problem type (classification or regression) based on the type of the response variable `y`. For binary classification, `y` should be a binary factor or numeric vector with two levels. For regression, `y` should be a continuous variable.
+-   **Ensemble**: Ensure `ensemble` parameter is set to `FALSE` when aiming to build a bagging technque on a given model. This is because, the bagging allows only one model to train where as ensemble technique takes more than one model.
+
+## Example 1: Bagging on Logistic Regression
+
+### Prepare Data
+```{r}
+data_builder = function(problem_type, n = 100) {
+  set.seed(123)
+  data = NULL
+  if ('classification' == problem_type){
+    data <- data.frame(
+      feature_num1 = rnorm(n, mean = 5, sd = 2),  # Numerical feature
+      feature_num2 = rnorm(n, mean = 55, sd = 42),  # Numerical feature
+      feature_num3 = rnorm(n, mean = 544, sd = 52),  # Numerical feature
+      feature_num4 = rnorm(n, mean = 59, sd = 16),  # Numerical feature
+      feature_num5 = rnorm(n, mean = 9, sd = 17),  # Numerical feature
+      feature_cat = sample(c("Category1", "Category2", "Category3"), n, replace = TRUE),  # Categorical feature
+      target = sample(0:1, n, replace = TRUE)  # Binary target variable
+    )
+  } else {
+    data <- data.frame(
+      feature_num1 = rnorm(n, mean = 5, sd = 2),  # Numerical feature
+      feature_num2 = rnorm(n, mean = 55, sd = 42),  # Numerical feature
+      feature_num3 = rnorm(n, mean = 544, sd = 52),  # Numerical feature
+      feature_num4 = rnorm(n, mean = 59, sd = 16),  # Numerical feature
+      feature_cat = sample(c("Category1", "Category2", "Category3"), n, replace = TRUE),  # Categorical feature
+      target = rnorm(sample(0:1, n, replace = TRUE))  # reg target variable
+    )
+  }
+  X <- data[, -which(names(data) == "target")]
+  y <- data[["target"]]
+  return(list(X = X, y = y))
+}
+data = data_builder('classification')
+X = data$X
+y = data$y
+```
+
+## Building
+
+```{r}
+models <- list("logistic_regression")
+model_params = list(linear_regression = list(), elastic_net = list(lambda = c(0.01,0.1,0.5)))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_params, ensemble = FALSE, parameter_tuning = TRUE, bagging = TRUE)
+results
+```
+## Example 2: Building a Random Forest Model for Regression - with CV & Parameter tuning.
+### Let us also choose to top k predictors by specifying either k or feature_selection_method
+```{r}
+data = data_builder('classification')
+X = data$X
+y = data$y
+models <- list("random_forest")
+model_params = list(random_forest = list(ntree=200))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_params, ensemble = FALSE, parameter_tuning = TRUE, bagging = TRUE)
+results
+```
+

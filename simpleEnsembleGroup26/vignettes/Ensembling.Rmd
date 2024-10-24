@@ -1,0 +1,81 @@
+---
+title: "Ensembling technique"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Ensembling technique}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r}
+library(simpleEnsembleGroup26)
+```
+
+# Instructions for Ensembling technique
+
+When performing bagging technique using the `unifiedModelingToolkit` function, it's important to follow these guidelines for the function to work correctly:
+
+-   **Model Selection**: Pass a list containing only one model name to the `models` parameter. You can choose from the following models: `list("Lasso_regression", "lasso", "ridge", "elastic_net", "random_forest")`.
+-   **Problem Type Detection**: The function automatically detects the problem type (classification or regression) based on the type of the response variable `y`. For binary classification, `y` should be a binary factor or numeric vector with two levels. For regression, `y` should be a continuous variable.
+-   **Ensemble**: Ensure both `ensemble` parameter is set to `FALSE` when aiming to build a bagging technque on a given model. This is because, the bagging allows only one model to train where as ensemble technique takes more than one model.
+
+
+-   **Choosing Models**: Put together a list with the names of more than one model you want to use together. You can pick from models like list("logistic_regression", "lasso", "ridge", "elastic_net", "random_forest").
+-   **Problem Type Detection**: The function automatically detects the problem type (classification or regression) based on the type of the response variable `y`. For binary classification, `y` should be a binary factor or numeric vector with two levels. For regression, `y` should be a continuous variable.
+-   **Activating Ensemble**: To use the ensemble method, which means combining multiple models for better accuracy, make sure to set the ensemble parameter to TRUE. Ensemble works with more than one model, unlike bagging, which uses just one model in multiple ways. So, bagging should be set to FALSE.
+
+### Prepare Data
+```{r}
+data_builder = function(problem_type, n = 100) {
+  set.seed(123)
+  data = NULL
+  if ('classification' == problem_type){
+    data <- data.frame(
+      feature_num1 = rnorm(n, mean = 5, sd = 2),  # Numerical feature
+      feature_num2 = rnorm(n, mean = 55, sd = 42),  # Numerical feature
+      feature_num3 = rnorm(n, mean = 544, sd = 52),  # Numerical feature
+      feature_num4 = rnorm(n, mean = 59, sd = 16),  # Numerical feature
+      feature_num5 = rnorm(n, mean = 9, sd = 17),  # Numerical feature
+      feature_cat = sample(c("Category1", "Category2", "Category3"), n, replace = TRUE),  # Categorical feature
+      target = sample(0:1, n, replace = TRUE)  # Binary target variable
+    )
+  } else {
+    data <- data.frame(
+      feature_num1 = rnorm(n, mean = 5, sd = 2),  # Numerical feature
+      feature_num2 = rnorm(n, mean = 55, sd = 42),  # Numerical feature
+      feature_num3 = rnorm(n, mean = 544, sd = 52),  # Numerical feature
+      feature_num4 = rnorm(n, mean = 59, sd = 16),  # Numerical feature
+      feature_cat = sample(c("Category1", "Category2", "Category3"), n, replace = TRUE),  # Categorical feature
+      target = rnorm(sample(0:1, n, replace = TRUE))  # reg target variable
+    )
+  }
+  X <- data[, -which(names(data) == "target")]
+  y <- data[["target"]]
+  return(list(X = X, y = y))
+}
+data = data_builder('regression')
+X = data$X
+y = data$y
+```
+
+## Ensemble - ridge & lasso
+
+```{r}
+models <- list("ridge", "lasso")
+model_params = list()
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_params, parameter_tuning = FALSE, bagging = FALSE, ensemble = TRUE,
+                                  ensemble_combine_method = 'stacking')
+results
+```
+## Ensemble - ridge & random_forest
+
+```{r}
+data = data_builder('classification')
+X = data$X
+y = data$y
+models <- list("ridge", 'random_forest')
+model_params = list()
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_params, parameter_tuning = FALSE, bagging = FALSE, ensemble = TRUE)
+results
+```
+

@@ -1,0 +1,4223 @@
+library(assertthat)
+library(simpleEnsembleGroup26)
+
+
+data_builder = function(problem_type) {
+  set.seed(123)
+  n = 100
+  data = NULL
+  if ('classification' == problem_type){
+    data <- data.frame(
+      feature_num1 = rnorm(n, mean = 5, sd = 2),  # Numerical feature
+      feature_num2 = rnorm(n, mean = 55, sd = 42),  # Numerical feature
+      feature_num3 = rnorm(n, mean = 544, sd = 52),  # Numerical feature
+      feature_num4 = rnorm(n, mean = 59, sd = 16),  # Numerical feature
+      feature_cat = sample(c("Category1", "Category2", "Category3"), n, replace = TRUE),  # Categorical feature
+      target = sample(0:1, n, replace = TRUE)  # Binary target variable
+    )
+  } else {
+    data <- data.frame(
+      feature_num1 = rnorm(n, mean = 5, sd = 2),  # Numerical feature
+      feature_num2 = rnorm(n, mean = 55, sd = 42),  # Numerical feature
+      feature_num3 = rnorm(n, mean = 544, sd = 52),  # Numerical feature
+      feature_num4 = rnorm(n, mean = 59, sd = 16),  # Numerical feature
+      feature_cat = sample(c("Category1", "Category2", "Category3"), n, replace = TRUE),  # Categorical feature
+      target = rnorm(sample(0:1, n, replace = TRUE))  # reg target variable
+    )
+  }
+  X <- data[, -which(names(data) == "target")]
+  y <- data[["target"]]
+  return(list(X = X, y = y))
+}
+
+
+
+print('# --------------------------------- Single MODEL BUILDING ---------------------------------')
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=c(0.01, 0.005, 0.2)))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+
+# --------------------------------- Single MODEL BUILDING with TUNING FALSE ---------------------------------
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION lasso ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION ridge ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION elastic_net ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION elastic_net ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+results
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION one_hot = FALSE ---------------------------------
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION drop_missing_records = TRUE ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION scale = FALSE ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION remove_outliers = TRUE ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION parameter tunning = TRUE ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+nrow(X)
+length(y)
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=list(0.01, 0.02)))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(!is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+test_predictions = make_predictions(results$model, head(X))
+assert_that('predictions' %in% names(test_predictions) && length(test_predictions$predictions) == 6)
+
+print("------EVERYTHING ABOUT SINGLE MODEL BULDING IS SUCCESS------")
+
+
+
+print('# --------------------------------- BAGGING ---------------------------------')
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+
+# --------------------------------- Single MODEL BUILDING with TUNING FALSE ---------------------------------
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = NULL,
+                                  k = 5, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION lasso ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(ntree=200))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'lasso',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION ridge ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'ridge',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION elastic_net ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'elastic_net',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION elastic_net ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+results
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION one_hot = FALSE ---------------------------------
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION drop_missing_records = TRUE ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL,  drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION scale = FALSE ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = FALSE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION remove_outliers = TRUE ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = FALSE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# --------------------------------- Single MODEL BUILDING with FEATURES SELECTION parameter tunning = TRUE ---------------------------------
+
+# linear_regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "linear_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# logistic regression ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "logistic_regression"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+nrow(X)
+length(y)
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=list(0.01, 0.02)))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# lasso - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "lasso"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# ridge - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# ridge - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "ridge"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "elastic_net"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+# random_forest - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+model_type = "random_forest"
+models = list(model_type)
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = TRUE, bagging_R = 100, ensemble = FALSE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+print("------EVERYTHING ABOUT BAGGING IS SUCCESS------")
+
+
+
+
+data = data_builder('classification')
+X = data$X
+y = data$y
+models = list("logistic_regression","lasso","ridge","elastic_net","random_forest")
+
+model_tuning_params <- list(
+  'linear_regression' = list(),
+  'lasso' = list(lambda=c(0.01, 0.005, 0.2)),
+  'ridge' = list(lambda=c(0.01, 0.005, 0.2)),
+  'elastic_net' = list(lambda=c(0.01, 0.005, 0.2)),
+  'random_forest' = list(ntree=200, mtry = c(10,20), stepFactor = 1.2, improve = 0.05)
+)
+
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = TRUE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5,
+                                  ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+data = data_builder('regression')
+X = data$X
+y = data$y
+models = list("linear_regression","lasso","ridge","elastic_net","random_forest")
+
+model_tuning_params <- list(
+  'logistic_regression' = list(),
+  'lasso' = list(lambda=c(0.01, 0.005, 0.2)),
+  'ridge' = list(lambda=c(0.01, 0.005, 0.2)),
+  'elastic_net' = list(lambda=c(0.01, 0.005, 0.2)),
+  'random_forest' = list(ntree=200, mtry = c(10,20), stepFactor = 1.2, improve = 0.05)
+)
+
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = TRUE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5,
+                                  ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+data = data_builder('classification')
+X = data$X
+y = data$y
+models = list("logistic_regression","lasso","ridge","elastic_net","random_forest")
+model_tuning_params <- list(
+  'linear_regression' = list(),
+  'lasso' = list(lambda=c(0.01, 0.005, 0.2)),
+  'ridge' = list(lambda=c(0.01, 0.005, 0.2)),
+  'elastic_net' = list(lambda=c(0.01, 0.005, 0.2)),
+  'random_forest' = list(ntree=200, mtry = c(10,20), stepFactor = 1.2, improve = 0.05)
+)
+
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = TRUE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5,
+                                  ensemble_combine_method = 'stacking')
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+data = data_builder('regression')
+X = data$X
+y = data$y
+models = list("linear_regression","lasso","ridge","elastic_net","random_forest")
+model_tuning_params <- list(
+  'logistic_regression' = list(),
+  'lasso' = list(lambda=c(0.01, 0.005, 0.2)),
+  'ridge' = list(lambda=c(0.01, 0.005, 0.2)),
+  'elastic_net' = list(lambda=c(0.01, 0.005, 0.2)),
+  'random_forest' = list(ntree=200, mtry = c(10,20), stepFactor = 1.2, improve = 0.05)
+)
+
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = TRUE, feature_selection_method = 'random_forest',
+                                  k = NULL, drop_missing_records = TRUE, fill_missing_method = "mean",
+                                  scale_data = FALSE, remove_outliers = TRUE, seed = 123, parameter_tuning = TRUE, cv_folds = 5,
+                                  ensemble_combine_method = 'stacking')
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+
+
+
+
+
+data = data_builder('regression')
+X = data$X
+y = data$y
+models = list("linear_regression","lasso","ridge","elastic_net","random_forest")
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = TRUE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# elastic_net - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+models = list("logistic_regression","lasso","ridge","elastic_net","random_forest")
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = TRUE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+# elastic_net - regression ------
+data = data_builder('regression')
+X = data$X
+y = data$y
+models = list("linear_regression","lasso","ridge","elastic_net","random_forest")
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = TRUE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+assert_that(is.null(results$model))
+print(results$predictions[1:10])
+assert_that(!('mse' %in% names(results$metrics)), msg = 'MSE is not present in metrics')
+# random_forest - classification ------
+data = data_builder('classification')
+X = data$X
+y = data$y
+models = list("logistic_regression","lasso","ridge","elastic_net","random_forest")
+model_tuning_params <- list(model_type = list(lambda=0.01))
+results <- unifiedModelingToolkit(X = X, y = y, models = models, model_tuning_params = model_tuning_params,
+                                  bagging = FALSE, bagging_R = 100, ensemble = TRUE, feature_selection_method = NULL,
+                                  k = NULL, drop_missing_records = FALSE, fill_missing_method = "mean",
+                                  scale_data = TRUE, remove_outliers = FALSE, seed = 123, parameter_tuning = TRUE, cv_folds = 10, ensemble_combine_method = NULL)
+
+assert_that(is.null(results$model))
+assert_that(length(unique(results$predictions)) == 2)
+assert_that(('accuracy' %in% names(results$metrics)), msg = 'Accuracy is not present in metrics')
+
+
+print('------- EVERYTHING IS SUCCESS -------')

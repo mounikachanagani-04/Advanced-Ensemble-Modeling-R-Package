@@ -1,0 +1,19 @@
+Package: simpleEnsembleGroup26
+Title: Machine Learning Package: AMS 597
+Version: 1.0.0.0000
+Authors@R: c(
+    person(given = "Manikanta", family = "Bandham", email = "manikanta.bandham@stonybrook.edu", role = c("aut", "cre"))
+    )
+Description: This R package provides a unified modeling toolkit for ensemble learning, bagging and statistical model building. 
+    It offers functionalities for fitting various models (linear, logistic, lasso, ridge, elastic net) 
+    and machine learning models (random forest) to both binary and continuous response variables. 
+    The package supports preprocessing of data, including feature selection, handling missing values, and outlier removal. 
+    It also includes options for model tuning, bagging, and ensemble learning techniques to enhance model performance.
+License: MIT
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Imports: 
+    glmnet,
+    randomForest,
+    stats

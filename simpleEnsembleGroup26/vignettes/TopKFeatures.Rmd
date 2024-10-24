@@ -1,0 +1,24 @@
+---
+title: "Bagging technique"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Bagging technique}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r}
+library(simpleEnsembleGroup26)
+n = 100
+data <- data.frame(
+    feature_num1 = rnorm(n, mean = 5, sd = 2),  # Numerical feature
+    feature_num2 = rnorm(n, mean = 55, sd = 42),  # Numerical feature
+    feature_num3 = rnorm(n, mean = 544, sd = 52),  # Numerical feature
+    feature_num4 = rnorm(n, mean = 59, sd = 16),  # Numerical feature
+    target = sample(0:1, n, replace = TRUE)  # Binary target variable
+  )
+x <- data[, -which(names(data) == "target")]
+y <- data[["target"]]
+select_top_k_predictors(x = x, y = y, k = 3, method = "auto")
+```
+
